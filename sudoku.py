@@ -34,8 +34,6 @@ class Sudoku:
 		self.constraints = list(set(self.get_row_constraints() +
 		 self.get_col_constraints() + self.get_box_constraints()))
 
-		self.neighbors = {row+col: self.get_neighbors(row+col, 
-			self.constraints) for row in self.ROW for col in self.COL}
 
 	def get_box_values(self, box):
 		return [self.board[cell] for cell in self.boxes['box%d' % box]]
@@ -115,29 +113,33 @@ class Sudoku:
 			x_i, x_j = pair
 
 			if self.ac3_remove_inconsistent_values(pair):
-				for x_k in self.neighbors[x_i]:
-					pair = (x_k, x_i)
-					queue.append(pair)
+				for (a, b) in self.constraints:
+					if b == x_i and not a == x_j:
+						pair = (a, b)
+						queue.append(pair)
+
+			if not self.domain[x_i]:
+				return False
+
+		for key in self.domain:
+			if not len(self.domain[key]) == 1:
+				return False
+
+		return True
 
 	def ac3_remove_inconsistent_values(self, (var1, var2)):
-		removed = False
-		for value_var1 in self.domain[var1]:
-			found_value = False
-			for value_var2 in self.domain[var2]:
-				if value_var1 != value_var2:
-					found_value = True
+		
+		if len(self.domain[var2]) == 1 and self.domain[var2][0] in self.domain[var1]:
+			self.domain[var1].remove(self.domain[var2][0])
+			return True
 
-			if not found_value and not len(self.domain[var1]) == 1:
-				self.domain[var1].remove(value_var1)
-				removed = True
+		return False
 
-		return removed
-
-	def print_(self):
+	def print_sudoku(self):
 		print "-----------------"
 		for i in self.ROW:
 			for j in self.COL:
-				print self.domain[i + j],
+				print self.domain[i + j][0],
 			print ""
 
 
@@ -145,4 +147,3 @@ if __name__ == "__main__":
 
 	s = Sudoku("003020600900305001001806400008102900700000008006708200002609500800203009005010300")
 	s.solve_ac3()
-	#print s.domain
