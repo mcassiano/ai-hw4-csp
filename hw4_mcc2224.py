@@ -18,17 +18,14 @@ for line in sudokuList.split("\n"):
 		num_ac3_solved += 1
 		s.print_sudoku()
 	else:
-		print "Failed to solve"
+		print "Failed to solve using AC-3"
 
-print "Solved %d sudokus" % num_ac3_solved
-
-exit()
+print "Solved %d sudokus using AC-3 inference" % num_ac3_solved
 
 # 1.6 solve all sudokus by backtracking
 for line in sudokuList.split("\n"):
-	# Parse sudokuList to individual sudoku in dict, e.g. sudoku["A2"] = 1
-	sudoku = {ROW[i] + COL[j]: int(line[9*i+j]) for i in range(9) for j in range(9)}
-
-	# write your backtracking algorithms here
-
-	printSudoku(sudoku)
+	s = Sudoku(line)
+	if s.solve_backtrack():
+		s.print_sudoku()
+	else:
+		print "Failed to solve using backtrack"

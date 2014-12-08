@@ -1,3 +1,5 @@
+import copy
+
 class Sudoku:
 
 
@@ -135,15 +137,81 @@ class Sudoku:
 
 		return False
 
+	def solve_backtrack(self):
+		domain_copy = copy.deepcopy(self.domain)
+		solution = self.__solve_backtrack_recursive({}, domain_copy)
+		if solution is not False:
+			self.domain = solution
+			return True
+
+		return False
+
+
+	def __solve_backtrack_recursive(self, assignment, current_domain):
+
+		if self.assignment_complete(assignment):
+			return assignment
+
+		var = self.select_unassigned_variable(current_domain, assignment)
+
+		for value in self.sort_using_lcv(var, current_domain[var], assignment):
+			if self.is_value_consistent(var, value, assignment):
+
+				assignment[var] = [value]
+
+				# forward checking
+				new_domain = copy.deepcopy(current_domain)
+				for (a, b) in self.constraints:
+					if a == var and len(new_domain[b]) > 1 and value in new_domain[b]:
+						new_domain[b].remove(value)
+
+				result = self.__solve_backtrack_recursive(assignment, new_domain)
+
+				if result != False:
+					return result
+
+				del assignment[var]
+
+		return False
+
+
+	def sort_using_lcv(self, var, values, assignment):
+		return sorted(values, 
+			key = lambda val: self.number_of_conflicts(
+				var, val, assignment))
+
+
+	def is_value_consistent(self, *args):
+		return self.number_of_conflicts(*args) == 0
+
+	def number_of_conflicts(self, var, value, assignment):
+
+		n_conflicts = 0
+
+		for (a, b) in self.constraints:
+			if a == var and b in assignment.keys():
+				if assignment[b][0] == value:
+					n_conflicts += 1
+
+		return n_conflicts
+
+	def select_unassigned_variable(self, domain, assignment):
+
+		unassigned_vars = filter(lambda x: x not in assignment.keys(),
+			domain.keys())
+
+		var = min(unassigned_vars,  
+			key = lambda x: len(domain[x]))
+
+		return var
+
+	def assignment_complete(self, assignment):
+		return len(assignment) == len(self.domain)
+
 	def print_sudoku(self):
 		print "-----------------"
 		for i in self.ROW:
 			for j in self.COL:
 				print self.domain[i + j][0],
 			print ""
-
-
-if __name__ == "__main__":
-
-	s = Sudoku("003020600900305001001806400008102900700000008006708200002609500800203009005010300")
-	s.solve_ac3()
+		
